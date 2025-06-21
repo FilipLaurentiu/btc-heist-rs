@@ -7,3 +7,4 @@ edition = "2021"
 clap = { version = "4.5.40", features = ["derive"] }
 bip39 = { version = "2.2.0", features = ["rand"] }
 bitcoin = { version = "0.32.6", features = ["rand", "base64"] }
+rayon = "1.10.0"

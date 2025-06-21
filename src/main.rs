@@ -4,6 +4,7 @@ use bitcoin::key::UntweakedPublicKey;
 use bitcoin::secp256k1::All;
 use bitcoin::{secp256k1::Secp256k1, Address, CompressedPublicKey, Network, PrivateKey, PublicKey};
 use clap::Parser;
+use rayon::prelude::*;
 use std::{
     collections::HashSet,
     fs::{File, OpenOptions},
@@ -129,8 +130,24 @@ fn main() {
     // generate list of pubkey with BTC
     println!("Loading \"{}\"...", &args.addresses);
 
-    let address_list: Arc<HashSet<String>> = if let Ok(lines) = read_lines(args.addresses) {
-        Arc::new(lines.map(|line| line.unwrap_or_default()).collect())
+    let address_list: Arc<HashSet<String>> = if let Ok(lines) = read_lines(&args.addresses) {
+        let lines: Vec<String> = lines
+            .filter_map(|line| line.ok())
+            .filter(|line| !line.trim().is_empty())
+            .collect();
+
+        // Use rayon to process addresses in parallel
+        let processed_addresses: HashSet<String> = lines
+            .par_iter()
+            .map(|line| line.to_string())
+            .collect();
+
+        println!(
+            "Successfully loaded {} unique addresses",
+            processed_addresses.len()
+        );
+
+        Arc::new(processed_addresses)
     } else {
         eprintln!("Error reading addresses file. Exiting.");
         return;
